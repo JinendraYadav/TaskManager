@@ -1,8 +1,8 @@
-
-import express, { json } from 'express';
+import express from 'express';
 import cors from 'cors';
-import { connect } from 'mongoose';
-import { config } from 'dotenv';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+
 import userRoutes from './routes/userRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
 import projectRoutes from './routes/projectRoutes.js';
@@ -12,23 +12,27 @@ import emailRoutes from './routes/emailRoutes.js';
 import commentsRouter from './routes/commentRoutes.js';
 
 // Load environment variables
-config();
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // CORS configuration
 app.use(cors({
-  origin: ['http://localhost:8080', 'http://localhost:3000', process.env.FRONTEND_URL || '*'],
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:8080',
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // Middleware
-app.use(json());
+app.use(express.json());
 
-// API routes with correct mapping
+// Routes
 app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/projects', projectRoutes);
@@ -37,23 +41,25 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/email', emailRoutes);
 app.use('/api/comments', commentsRouter);
 
-// Status route for health checks
+// Health check route
 app.get('/api/status', (req, res) => {
   res.json({ status: 'API is running' });
 });
 
-// Connect to MongoDB with better logging
-const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/taskmanager';
-console.log('Attempting to connect to MongoDB at:', mongoURI);
+// MongoDB Connection
+const mongoURI = process.env.MONGODB_URI;
+console.log('Connecting to MongoDB...');
 
-connect(mongoURI)
-  .then(() => console.log('Successfully connected to MongoDB'))
+mongoose.connect(mongoURI, {
+  dbName: 'taskmanager',
+})
+  .then(() => console.log('✅ Connected to MongoDB'))
   .catch(err => {
-    console.error('Failed to connect to MongoDB. Error details:', err);
-    console.error('Please ensure MongoDB is running and the connection string is correct');
+    console.error('❌ MongoDB connection error:', err.message);
+    process.exit(1); // Exit the app if DB connection fails
   });
 
-// Start server
+// Start Server
 app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server is running at http://localhost:${PORT}`);
 });
