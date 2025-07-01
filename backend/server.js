@@ -15,19 +15,20 @@ import commentsRouter from './routes/commentRoutes.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:5173'
+].filter(Boolean); // removes any undefined
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:8080',
-    process.env.FRONTEND_URL
-  ].filter(Boolean),
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
 
 // Middleware
 app.use(express.json());
