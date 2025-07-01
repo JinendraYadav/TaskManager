@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const getBaseUrl = () => {
-  return import.meta.env.VITE_API_BASE_URL || '/api';
+  return import.meta.env.VITE_API_BASE_URL || '';
 };
 
 const api = axios.create({
@@ -12,11 +12,18 @@ const api = axios.create({
   timeout: 30000
 });
 
+// 🔁 Automatically prefix all paths with /api if not already
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Auto-prefix "/api" if not already
+  if (config.url && !config.url.startsWith('/api')) {
+    config.url = '/api' + config.url;
+  }
+
   console.log('API Request:', config.method, config.url);
   return config;
 }, (error) => {
