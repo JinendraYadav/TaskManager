@@ -60,6 +60,6 @@ mongoose.connect(mongoURI, {
   });
 
 // Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running at http://localhost:${PORT}`);
+app.listen(process.env.PORT || 5000, () => {
+  console.log(`Server running on port ${process.env.PORT || 5000}`);
 });
