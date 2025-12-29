@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, JSX } from "react";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";

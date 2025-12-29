@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Task, TaskStatus } from "@/types";
 import { TaskCard } from "./TaskCard";
 import { useToast } from "@/hooks/use-toast";
@@ -14,57 +14,57 @@ interface DraggableTaskListProps {
 export function DraggableTaskList({ items, onUpdate, onDelete }: DraggableTaskListProps) {
   const [tasks, setTasks] = useState<Task[]>(items || []);
   const { toast } = useToast();
-  
+
   // Update when items prop changes
   useEffect(() => {
     setTasks(items || []);
   }, [items]);
-  
+
   const getStatusColumn = (status: TaskStatus) => {
     return tasks.filter(task => task.status === status);
   };
-  
+
   const handleDragEnd = (result: DropResult) => {
     const { source, destination } = result;
-    
+
     // Dropped outside a valid droppable area
     if (!destination) return;
-    
+
     // Same position, no change needed
     if (
       source.droppableId === destination.droppableId &&
       source.index === destination.index
     ) return;
-    
+
     // Get the task that was dragged
     const sourceStatus = source.droppableId as TaskStatus;
     const sourceIndex = source.index;
     const tasksInSourceColumn = tasks.filter(task => task.status === sourceStatus);
     const taskToMove = tasksInSourceColumn[sourceIndex];
-    
+
     if (!taskToMove) return;
-    
+
     // Update task status and make API call
     const updatedTask: Task = {
       ...taskToMove,
       status: destination.droppableId as TaskStatus
     };
-    
+
     // Update local state first for immediate UI feedback
-    setTasks(prev => 
+    setTasks(prev =>
       prev.map(task => task.id === updatedTask.id ? updatedTask : task)
     );
-    
+
     // Call the parent's update handler for API update
     onUpdate(updatedTask);
-    
+
     toast({
       title: "Task Updated",
       description: `Task moved to ${destination.droppableId.replace('-', ' ')}`,
       duration: 1000,
     });
   };
-  
+
   const statuses: TaskStatus[] = ["todo", "in-progress", "blocked", "completed"];
   const statusLabels: Record<TaskStatus, string> = {
     "todo": "To Do",
@@ -72,7 +72,7 @@ export function DraggableTaskList({ items, onUpdate, onDelete }: DraggableTaskLi
     "blocked": "Blocked",
     "completed": "Completed"
   };
-  
+
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
