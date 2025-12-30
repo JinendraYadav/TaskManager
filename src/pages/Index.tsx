@@ -9,6 +9,7 @@ import TeamPage from "./TeamPage";
 import ReportsPage from "./ReportsPage";
 import ProfilePage from "./ProfilePage";
 import NotFound from "./NotFound";
+import NotificationsPage from "./NotificationPage";
 
 const Index = () => {
   return (
@@ -21,6 +22,7 @@ const Index = () => {
         <Route path="/team" element={<TeamPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppShell>

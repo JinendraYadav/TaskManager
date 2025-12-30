@@ -100,7 +100,7 @@ router.get('/me', auth, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     console.log('Current user request successful:', user._id);
     res.json({
       id: user._id,
@@ -149,6 +149,65 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+// Change password
+router.put('/password', auth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  const isMatch = await user.comparePassword(currentPassword);
+  if (!isMatch) {
+    return res.status(400).json({ message: 'Current password incorrect' });
+  }
+
+  user.password = newPassword; // must assign
+  await user.save();           // must save (pre-save hook hashes)
+
+  res.json({ message: 'Password updated' });
+});
+
+
+// Update current user's profile
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const { name, avatar } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: { name, avatar } },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar,
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete current user
+router.delete('/me', auth, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.user.id);
+    res.json({ message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Update user
 router.put('/:id', auth, async (req, res) => {
   try {
@@ -156,23 +215,23 @@ router.put('/:id', auth, async (req, res) => {
     if (req.user.id !== req.params.id) {
       return res.status(401).json({ message: 'Not authorized to update this user' });
     }
-    
+
     const { name, email, avatar } = req.body;
     const updateData = {};
     if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (avatar) updateData.avatar = avatar;
-    
+
     const user = await User.findByIdAndUpdate(
-      req.params.id, 
-      { $set: updateData }, 
+      req.params.id,
+      { $set: updateData },
       { new: true }
     ).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     res.json({
       id: user._id,
       name: user.name,

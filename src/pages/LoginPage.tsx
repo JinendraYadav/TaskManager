@@ -19,7 +19,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  
+
   // Get the destination the user was trying to access
   const from = location.state?.from || "/tasks";
 
@@ -29,12 +29,13 @@ export default function LoginPage() {
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, from]);
+  console.log("Auth state:", { isAuthenticated });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setLoginError(null);
-    
+
     try {
       console.log("Attempting login with:", { email, password });
       await login(email, password);
@@ -46,13 +47,13 @@ export default function LoginPage() {
       navigate(from, { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);
-      
-      const errorMessage = error.response?.data?.message || 
-                           error.message || 
-                           "Invalid credentials. Please check your email and password.";
-      
+
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        "Invalid credentials. Please check your email and password.";
+
       setLoginError(errorMessage);
-      
+
       toast({
         title: "Login failed",
         description: errorMessage,
@@ -81,10 +82,10 @@ export default function LoginPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="name@example.com" 
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -97,8 +98,8 @@ export default function LoginPage() {
                   Forgot password?
                 </Link>
               </div>
-              <Input 
-                id="password" 
+              <Input
+                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

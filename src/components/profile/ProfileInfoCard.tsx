@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ProfileInfoCardProps {
   initialName: string;
@@ -19,6 +20,7 @@ export function ProfileInfoCard({ initialName, initialEmail, initialAvatar }: Pr
   const [name, setName] = useState(initialName);
   const [email] = useState(initialEmail);
   const [avatar, setAvatar] = useState(initialAvatar);
+  const { setUser } = useAuth();
   const { toast } = useToast();
 
   const updateProfileMutation = useMutation({
@@ -26,7 +28,9 @@ export function ProfileInfoCard({ initialName, initialEmail, initialAvatar }: Pr
       const response = await api.put('/users/profile', profileData);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (updatedUser) => {
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setUser(updatedUser);
       toast({
         title: "Profile Updated",
         description: "Your profile has been updated successfully.",
@@ -95,3 +99,4 @@ export function ProfileInfoCard({ initialName, initialEmail, initialAvatar }: Pr
     </Card>
   );
 }
+

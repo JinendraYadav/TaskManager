@@ -1,56 +1,95 @@
-import { useState, useEffect } from 'react';
-import { Notification } from '@/types';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/services/api'; // ✅ using your axios instance
+import { useEffect } from "react";
+import { Notification } from "@/types";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/services/api";
 
 export function useNotifications() {
   const queryClient = useQueryClient();
-  const [unreadCount, setUnreadCount] = useState(0);
 
-  const { data: notifications = [] } = useQuery({
-    queryKey: ['notifications'],
+  /* ---------------- Fetch notifications ---------------- */
+  const {
+    data: notifications = [],
+    isLoading,
+  } = useQuery<Notification[]>({
+    queryKey: ["notifications"],
     queryFn: async () => {
-      const response = await api.get('/notifications');
+      const response = await api.get("/notifications");
       return response.data;
     },
     placeholderData: [],
   });
 
-  const { mutate: markAsRead } = useMutation({
-    mutationFn: async (notificationId: string) => {
-      const response = await api.put(`/notifications/${notificationId}/read`);
-      return response.data;
-    },
-    onMutate: async (notificationId) => {
-      const previousNotifications = queryClient.getQueryData(['notifications']);
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-      queryClient.setQueryData(['notifications'], (old: Notification[] = []) =>
-        old.map((notification) =>
-          notification.id === notificationId
-            ? { ...notification, isRead: true }
-            : notification
+  /* ---------------- Mark one as read (optimistic) ---------------- */
+  const markAsReadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.put(`/notifications/${id}/read`);
+      return res.data;
+    },
+    onMutate: async (id) => {
+      const previousNotifications =
+        queryClient.getQueryData<Notification[]>(["notifications"]);
+
+      queryClient.setQueryData<Notification[]>(["notifications"], (old = []) =>
+        old.map((n) =>
+          n.id === id ? { ...n, isRead: true } : n
         )
       );
 
       return { previousNotifications };
     },
-    onError: (err, _, context) => {
-      queryClient.setQueryData(['notifications'], context?.previousNotifications);
+    onError: (_, __, context) => {
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(
+          ["notifications"],
+          context.previousNotifications
+        );
+      }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 
-  useEffect(() => {
-    setUnreadCount(
-      notifications.filter((notification: Notification) => !notification.isRead).length
-    );
-  }, [notifications]);
+  /* ---------------- Mark all as read ---------------- */
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.put("/notifications/read-all");
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+
+  /* ---------------- Delete notification ---------------- */
+  const deleteNotificationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`/notifications/${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
 
   return {
     notifications,
-    markAsRead,
     unreadCount,
+    isLoading,
+
+    /* exposed actions */
+    fetchNotifications: () =>
+      queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+
+    markAsRead: (id: string) =>
+      markAsReadMutation.mutateAsync(id),
+
+    markAllAsRead: () =>
+      markAllAsReadMutation.mutateAsync(),
+
+    deleteNotification: (id: string) =>
+      deleteNotificationMutation.mutateAsync(id),
   };
 }

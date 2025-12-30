@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export function PasswordCard() {
   const [currentPassword, setCurrentPassword] = useState('');
+  const { logout } = useAuth();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { toast } = useToast();
@@ -27,11 +29,15 @@ export function PasswordCard() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      logout();
     },
     onError: (error: any) => {
       toast({
         title: "Password Change Failed",
-        description: error.message || "Failed to change password",
+        description:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to change password",
         variant: "destructive",
       });
     },
@@ -39,7 +45,7 @@ export function PasswordCard() {
 
   const handlePasswordChange = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       toast({
         title: "Passwords Don't Match",
@@ -48,7 +54,7 @@ export function PasswordCard() {
       });
       return;
     }
-    
+
     changePasswordMutation.mutate({
       currentPassword,
       newPassword,
@@ -103,3 +109,4 @@ export function PasswordCard() {
     </Card>
   );
 }
+

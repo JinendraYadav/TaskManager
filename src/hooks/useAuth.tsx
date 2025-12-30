@@ -6,12 +6,14 @@ import { useNavigate } from 'react-router-dom';
 
 type AuthContextType = {
   user: User | null;
+  setUser: (user: User | null) => void; // 🔥 ADD THIS
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 };
+
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -23,34 +25,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Check if user is logged in on initial load
   useEffect(() => {
-    const checkLoggedIn = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          try {
-            console.log("Token found, fetching current user...");
-            const res = await authService.getCurrentUser();
-            setUser(res.data);
-            console.log("User authenticated:", res.data);
-          } catch (error) {
-            console.error("Error fetching current user:", error);
-            localStorage.removeItem('token');
-            setUser(null);
-          }
-        } else {
-          console.log("No authentication token found");
-        }
-      } catch (error) {
-        console.error("Auth provider error:", error);
-        localStorage.removeItem('token');
-        setUser(null);
-      } finally {
-        setIsLoading(false);
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      if (token && storedUser) {
+        // Instant hydration (prevents redirect bugs)
+        setUser(JSON.parse(storedUser));
       }
+
+      if (token) {
+        try {
+          const res = await authService.getCurrentUser();
+          setUser(res.data);
+          localStorage.setItem('user', JSON.stringify(res.data));
+        } catch (error) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
+      }
+
+      setIsLoading(false);
     };
 
-    checkLoggedIn();
-  }, [navigate]);
+    initAuth();
+  }, []);
 
   // Login function
   const login = async (email: string, password: string): Promise<void> => {
@@ -60,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const res = await authService.login({ email, password });
       console.log("Login successful, setting token and user");
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
       setUser(res.data.user);
     } catch (error) {
       console.error('Login failed:', error);
@@ -75,6 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const res = await authService.register({ name, email, password });
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
       setUser(res.data.user);
     } catch (error) {
       console.error('Registration failed:', error);
@@ -87,6 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Logout function
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
     navigate('/login');
     toast({
@@ -99,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         isAuthenticated: !!user,
         isLoading,
         login,

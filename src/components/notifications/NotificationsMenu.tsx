@@ -53,9 +53,8 @@ export function NotificationsMenu() {
             notifications.slice(0, 5).map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
-                className={`flex flex-col items-start p-3 ${
-                  !notification.isRead ? "bg-muted/50" : ""
-                }`}
+                className={`flex flex-col items-start p-3 ${!notification.isRead ? "bg-muted/50" : ""
+                  }`}
                 onClick={() => handleNotificationClick(notification.id)}
               >
                 <div className="text-sm">{notification.message}</div>

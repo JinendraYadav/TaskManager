@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import api from "@/services/api";
 import { CreateTeamDialog } from "@/components/team/CreateTeamDialog";
 import { TeamList } from "@/components/team/TeamList";
+import { Button } from "@/components/ui/button";
 
 export default function TeamPage() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -36,7 +37,7 @@ export default function TeamPage() {
 
   const handleTeamCreated = (newTeam: Team) => {
     setTeams(prev => [...prev, newTeam]);
-    
+
     toast({
       title: "Team Created",
       description: "Team has been created successfully.",
@@ -45,12 +46,12 @@ export default function TeamPage() {
   };
 
   const handleMemberAdded = (updatedTeam: Team) => {
-    setTeams(prev => 
-      prev.map(team => 
+    setTeams(prev =>
+      prev.map(team =>
         team._id === updatedTeam._id ? updatedTeam : team
       )
     );
-    
+
     toast({
       title: "Member Added",
       description: "Team member has been added successfully.",
@@ -61,10 +62,10 @@ export default function TeamPage() {
   const handleLeaveTeam = async (teamId: string) => {
     try {
       await api.delete(`/teams/${teamId}/leave`);
-      
+
       // Update the teams list by removing the team the user left
       setTeams(prev => prev.filter(team => team._id !== teamId));
-      
+
       toast({
         title: "Team Left",
         description: "You have left the team successfully.",
@@ -89,12 +90,20 @@ export default function TeamPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Team</h2>
-        <CreateTeamDialog onTeamCreated={handleTeamCreated} />
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          Create Team
+        </Button>
+        <CreateTeamDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          onTeamCreated={handleTeamCreated}
+        />
+
       </div>
 
-      <TeamList 
-        teams={teams} 
-        isLoading={isLoading} 
+      <TeamList
+        teams={teams}
+        isLoading={isLoading}
         onMemberAdded={handleMemberAdded}
         onLeaveTeam={handleLeaveTeam}
         onCreateClick={handleCreateClick}
