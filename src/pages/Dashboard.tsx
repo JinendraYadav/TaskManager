@@ -78,6 +78,7 @@ export default function Dashboard() {
           title="Total Tasks"
           value={totalTasks}
           icon={ListTodo}
+          className="border-l-4 border-blue-400"
         />
         <StatsCard
           title="In Progress"

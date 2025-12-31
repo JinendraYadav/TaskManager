@@ -2,7 +2,13 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateTime } from "@/lib/helpers";
-import { CheckCircle, Clock, FileText, MessageSquare } from "lucide-react";
+import {
+  ListTodo,
+  Clock,
+  CheckCircle,
+  XCircle,
+  HelpCircle,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { taskService } from "@/services/taskService";
 import { userService } from "@/services/userService";
@@ -24,21 +30,21 @@ export function RecentActivity() {
         const recentTasks = tasks
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .slice(0, 5);
-        
+
         setActivities(recentTasks);
-        
+
         // Get unique user IDs (both assignees and creators)
         const userIds = new Set<string>();
-        
+
         recentTasks.forEach(task => {
           // Add assignee ID
           if (task.assigneeId) {
-            const assigneeId = typeof task.assigneeId === "string" 
-              ? task.assigneeId 
+            const assigneeId = typeof task.assigneeId === "string"
+              ? task.assigneeId
               : task.assigneeId.id;
             if (assigneeId) userIds.add(assigneeId);
           }
-          
+
           // Add creator ID
           if (task.createdBy) {
             const creatorId = typeof task.createdBy === "string"
@@ -47,9 +53,9 @@ export function RecentActivity() {
             if (creatorId) userIds.add(creatorId);
           }
         });
-        
+
         const userMap: Record<string, User> = {};
-        
+
         // For development environment - add mock user if no real users
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
           userMap["currentUserId"] = {
@@ -59,7 +65,7 @@ export function RecentActivity() {
             avatar: ""
           };
         }
-        
+
         // Fetch each user
         for (const id of userIds) {
           try {
@@ -83,7 +89,7 @@ export function RecentActivity() {
             }
           }
         }
-        
+
         setUsers(userMap);
       } catch (error) {
         console.error("Error fetching activities:", error);
@@ -97,20 +103,26 @@ export function RecentActivity() {
 
   const getActivityIcon = (status: string) => {
     switch (status) {
-      case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case "todo":
+        return <ListTodo className="h-4 w-4 text-blue-500" />;
+
       case "in-progress":
         return <Clock className="h-4 w-4 text-amber-500" />;
+
+      case "completed":
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+
       case "blocked":
-        return <MessageSquare className="h-4 w-4 text-red-500" />;
+        return <XCircle className="h-4 w-4 text-red-500" />;
+
       default:
-        return <FileText className="h-4 w-4 text-blue-500" />;
+        return <HelpCircle className="h-4 w-4 text-gray-400" />;
     }
   };
 
   const getUserInfo = (userId: string | { id: string, name?: string } | undefined) => {
     if (!userId) return { name: "User", avatar: "", initial: "U" };
-    
+
     // For development mock user
     if (userId === "currentUserId" || (typeof userId === "string" && userId === "currentUserId")) {
       return {
@@ -119,22 +131,22 @@ export function RecentActivity() {
         initial: "D"
       };
     }
-    
+
     const id = typeof userId === "string" ? userId : userId.id;
     const user = users[id];
-    
+
     if (!user) {
       // If no user found in our map, try to use embedded user info if available
       if (typeof userId !== "string" && userId.name) {
-        return { 
-          name: userId.name, 
-          avatar: "", 
+        return {
+          name: userId.name,
+          avatar: "",
           initial: userId.name.charAt(0)
         };
       }
       return { name: "User", avatar: "", initial: "U" };
     }
-    
+
     return {
       name: user.name || "User",
       avatar: user.avatar || "",
@@ -155,7 +167,7 @@ export function RecentActivity() {
         ) : (
           activities.map((activity) => {
             const userInfo = getUserInfo(activity.createdBy);
-            
+
             return (
               <div key={activity.id} className="flex items-start gap-4">
                 <div className="mt-1">{getActivityIcon(activity.status)}</div>

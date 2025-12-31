@@ -22,7 +22,7 @@ interface SideBarProps {
 export function SideBar({ isOpen, setIsOpen }: SideBarProps) {
   // Use auth directly
   const { user, isLoading } = useAuth();
-  
+
   const navItems = [
     { name: "Dashboard", icon: LayoutDashboard, path: "/" },
     { name: "Tasks", icon: CheckSquare, path: "/tasks" },
@@ -68,21 +68,6 @@ export function SideBar({ isOpen, setIsOpen }: SideBarProps) {
             </Link>
           ))}
         </nav>
-      </div>
-
-      <div className="mt-auto border-t p-4">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={user?.avatar} alt={user?.name} />
-            <AvatarFallback>{user?.name?.[0] || "?"}</AvatarFallback>
-          </Avatar>
-          {isOpen && (
-            <div className="grid gap-0.5 text-sm">
-              <div className="font-medium">{isLoading ? "Loading..." : user?.name || "Not logged in"}</div>
-              <div className="text-xs text-muted-foreground">{isLoading ? "" : user?.email || ""}</div>
-            </div>
-          )}
-        </div>
       </div>
     </aside>
   );

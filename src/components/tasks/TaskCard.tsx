@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Task } from "@/types";
-import { formatDate, getPriorityColor, getStatusColor } from "@/lib/helpers";
+import { formatDate, getPriorityColor, getStatusColor, getStatusIcon } from "@/lib/helpers";
 import { AlertTriangle, Calendar, MessageSquare, MoreVertical } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,12 +25,13 @@ interface TaskCardProps {
 export function TaskCard({ task, onUpdate, onDelete }: TaskCardProps) {
   const { user: currentUser } = useAuth();
   const [commentsCount, setCommentsCount] = useState(0);
+  const StatusIcon = getStatusIcon(task.status);
   const { toast } = useToast();
 
   // Prepare createdBy info safely with current user info
   let creatorName = "Unknown";
   let creatorAvatar = "";
-  
+
   if (typeof task.createdBy === "string") {
     // If it's just a string ID, check if it matches current user
     if (currentUser && task.createdBy === currentUser.id) {
@@ -46,7 +47,7 @@ export function TaskCard({ task, onUpdate, onDelete }: TaskCardProps) {
   useEffect(() => {
     const fetchComments = async () => {
       if (!task.id) return;
-      
+
       try {
         const res = await api.get(`/comments/task/${task.id}`);
         if (res.data) {
@@ -70,17 +71,21 @@ export function TaskCard({ task, onUpdate, onDelete }: TaskCardProps) {
   const tagsArray = Array.isArray(task.tags)
     ? task.tags
     : typeof task.tags === "string"
-    ? task.tags.split(", ").map((tag: string) => tag.trim())
-    : [];
+      ? task.tags.split(", ").map((tag: string) => tag.trim())
+      : [];
 
   return (
     <Card className="h-full">
       <CardHeader className="p-4 pb-2">
-        <div className="flex items-center justify-between">
-          <Badge className={getStatusColor(task.status)}>
+        <div className="flex items-center justify-between capitalize">
+          <Badge
+            variant="default"
+            className={getStatusColor(task.status)}
+          >
+            <StatusIcon className="mr-1 h-3.5 w-3.5" />
             {task.status.replace("-", " ")}
           </Badge>
-          <div className="flex items-center">
+          <div className="flex items-center capitalize">
             <Badge variant="outline" className={getPriorityColor(task.priority)}>
               {task.priority}
             </Badge>

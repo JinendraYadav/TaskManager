@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,81 +25,82 @@ import { cn } from "@/lib/utils";
 export function TaskFormFields() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [date, setDate] = useState<Date | undefined>();
-  
-  const { register, setValue, getValues, formState: { errors } } = useFormContext();
+
+  const {
+    register,
+    setValue,
+    watch,
+    getValues,
+    formState: { errors },
+  } = useFormContext();
+
+  /* 🔑 Reactive values */
+  const projectId = watch("projectId");
+  const dueDateValue = watch("dueDate");
+  const date = dueDateValue ? new Date(dueDateValue) : undefined;
 
   useEffect(() => {
     const loadProjects = async () => {
       setIsLoading(true);
       try {
         const projectData = await projectService.getAllProjects();
-        console.log("Loaded projects for dropdown:", projectData);
         setProjects(projectData || []);
-      } catch (error) {
-        console.error("Error loading projects:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadProjects();
-    
-    // Set initial date if available
-    const initialDate = getValues("dueDate");
-    if (initialDate) {
-      setDate(new Date(initialDate));
-    } else {
-      setDate(new Date());
-      setValue("dueDate", format(new Date(), "yyyy-MM-dd"));
-    }
-  }, [getValues, setValue]);
 
-  // Update the form whenever date changes
-  useEffect(() => {
-    if (date) {
-      setValue("dueDate", format(date, "yyyy-MM-dd"));
+    /* 🔑 Ensure dueDate exists exactly once */
+    if (!getValues("dueDate")) {
+      setValue("dueDate", format(new Date(), "yyyy-MM-dd"), {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
     }
-  }, [date, setValue]);
+  }, []);
 
   return (
     <>
+      {/* Title */}
       <div className="space-y-2">
-        <label htmlFor="title" className="text-sm font-medium">
-          Task Title
-        </label>
-        <Input 
-          id="title" 
+        <label className="text-sm font-medium">Task Title</label>
+        <Input
           placeholder="Enter task title"
           {...register("title")}
         />
         {errors.title && (
-          <p className="text-xs text-red-500">{errors.title.message as string}</p>
+          <p className="text-xs text-red-500">
+            {errors.title.message as string}
+          </p>
         )}
       </div>
-      
+
+      {/* Description */}
       <div className="space-y-2">
-        <label htmlFor="description" className="text-sm font-medium">
-          Description
-        </label>
-        <Textarea 
-          id="description" 
+        <label className="text-sm font-medium">Description</label>
+        <Textarea
           placeholder="Enter task description"
           {...register("description")}
         />
         {errors.description && (
-          <p className="text-xs text-red-500">{errors.description.message as string}</p>
+          <p className="text-xs text-red-500">
+            {errors.description.message as string}
+          </p>
         )}
       </div>
-      
+
+      {/* Status & Priority */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label htmlFor="status" className="text-sm font-medium">
-            Status
-          </label>
-          <Select 
-            defaultValue={getValues("status")}
-            onValueChange={(value) => setValue("status", value as any)}
+          <label className="text-sm font-medium">Status</label>
+          <Select
+            value={watch("status")}
+            onValueChange={(value) =>
+              setValue("status", value as any, { shouldDirty: true })
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Select status" />
@@ -113,14 +113,14 @@ export function TaskFormFields() {
             </SelectContent>
           </Select>
         </div>
-        
+
         <div className="space-y-2">
-          <label htmlFor="priority" className="text-sm font-medium">
-            Priority
-          </label>
-          <Select 
-            defaultValue={getValues("priority")}
-            onValueChange={(value) => setValue("priority", value as any)}
+          <label className="text-sm font-medium">Priority</label>
+          <Select
+            value={watch("priority")}
+            onValueChange={(value) =>
+              setValue("priority", value as any, { shouldDirty: true })
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Select priority" />
@@ -134,39 +134,54 @@ export function TaskFormFields() {
           </Select>
         </div>
       </div>
-      
+
+      {/* Project & Due Date */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label htmlFor="project" className="text-sm font-medium">
-            Project
-          </label>
-          <Select 
-            onValueChange={(value) => setValue("projectId", value)}
-            defaultValue={getValues("projectId") || undefined}
+          <label className="text-sm font-medium">Project</label>
+          <Select
+            value={projectId ?? "none"}
+            onValueChange={(value) =>
+              setValue(
+                "projectId",
+                value === "none" ? undefined : value,
+                {
+                  shouldDirty: true,
+                  shouldTouch: true,
+                  shouldValidate: true,
+                }
+              )
+            }
           >
             <SelectTrigger>
-              <SelectValue placeholder={isLoading ? "Loading projects..." : "Select project"} />
+              <SelectValue
+                placeholder={
+                  isLoading ? "Loading projects..." : "Select project (optional)"
+                }
+              />
             </SelectTrigger>
-            <SelectContent className="bg-popover shadow-md">
-              {projects.length === 0 && (
-                <SelectItem value="none" disabled>No projects available</SelectItem>
-              )}
+            <SelectContent className="bg-white shadow-md">
+              <SelectItem value="none">No project</SelectItem>
               {projects.map((project) => (
-                <SelectItem key={project.id || project._id} value={project.id || project._id}>
+                <SelectItem
+                  key={project.id || project._id}
+                  value={project.id || project._id}
+                >
                   {project.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+
           {errors.projectId && (
-            <p className="text-xs text-red-500">{errors.projectId.message as string}</p>
+            <p className="text-xs text-red-500">
+              {errors.projectId.message as string}
+            </p>
           )}
         </div>
-        
+
         <div className="space-y-2">
-          <label htmlFor="dueDate" className="text-sm font-medium">
-            Due Date
-          </label>
+          <label className="text-sm font-medium">Due Date</label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -176,33 +191,48 @@ export function TaskFormFields() {
                   !date && "text-muted-foreground"
                 )}
               >
-                {date ? format(date, "PPP") : <span>Pick a date</span>}
+                {date ? format(date, "PPP") : "Pick a date"}
                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 bg-popover shadow-md" align="start">
+            <PopoverContent
+              className="w-auto p-0 bg-white shadow-md"
+              align="start"
+            >
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={setDate}
+                onSelect={(selectedDate) => {
+                  if (!selectedDate) return;
+                  setValue(
+                    "dueDate",
+                    format(selectedDate, "yyyy-MM-dd"),
+                    {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                      shouldValidate: true,
+                    }
+                  );
+                }}
                 initialFocus
-                className="bg-popover border rounded-md"
+                className="bg-white border rounded-md"
               />
             </PopoverContent>
           </Popover>
+
           <input type="hidden" {...register("dueDate")} />
           {errors.dueDate && (
-            <p className="text-xs text-red-500">{errors.dueDate.message as string}</p>
+            <p className="text-xs text-red-500">
+              {errors.dueDate.message as string}
+            </p>
           )}
         </div>
       </div>
-      
+
+      {/* Tags */}
       <div className="space-y-2">
-        <label htmlFor="tags" className="text-sm font-medium">
-          Tags
-        </label>
-        <Input 
-          id="tags" 
+        <label className="text-sm font-medium">Tags</label>
+        <Input
           placeholder="Enter tags separated by commas"
           {...register("tags")}
         />

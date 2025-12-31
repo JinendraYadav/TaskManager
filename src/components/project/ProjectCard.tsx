@@ -42,7 +42,7 @@ export function ProjectCard({ project, users }: ProjectCardProps) {
           {members.slice(0, 5).map((memberId, index) => {
             const user = getUserById(memberId);
             return (
-              <Avatar key={`${memberId || index}`} className="border-2 border-background">
+              <Avatar key={`${memberId || index}`} className="border border-black">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
               </Avatar>
