@@ -16,50 +16,78 @@ export default function ProjectsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     setIsLoading(true);
+
     try {
-      // Get projects data
+      // Fetch projects
       const projectsData = await projectService.getAllProjects();
-      // Ensure projects is always an array
       setProjects(Array.isArray(projectsData) ? projectsData : []);
 
-      // Get users data
+      // Fetch users
       try {
         const response = await api.get("/users");
         const userData = response.data || [];
-        
+
         const userMap: Record<string, User> = {};
         if (Array.isArray(userData)) {
           userData.forEach((user: User) => {
-            if (user && (user.id || user._id)) {
-              userMap[user.id || user._id as string] = user;
+            const userId = user.id || user._id;
+            if (userId) {
+              userMap[userId] = user;
             }
           });
         }
-        
+
         setUsers(userMap);
       } catch (userError) {
         console.error("Error fetching users:", userError);
-        // Continue with empty users rather than failing completely
+        setUsers({});
       }
     } catch (error) {
-      console.error("Error fetching projects data:", error);
+      console.error("Error fetching projects:", error);
       toast({
         title: "Error",
         description: "Failed to load projects. Please try again.",
         variant: "destructive",
         duration: 1000,
       });
-      // Set empty projects array to prevent map errors
       setProjects([]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchData();
+
+    const handleFocus = () => {
+      fetchData();
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
+
+  const handleProjectUpdated = (updated: Project) => {
+    setProjects((prev) =>
+      prev.map((p) =>
+        (p.id || p._id) === (updated.id || updated._id)
+          ? updated
+          : p
+      )
+    );
+  };
+
+  const handleProjectDeleted = (projectId: string) => {
+    setProjects((prev) =>
+      prev.filter(
+        (p) => (p.id || p._id) !== projectId
+      )
+    );
   };
 
   const handleCreateProject = (newProject: Project) => {
@@ -77,6 +105,7 @@ export default function ProjectsPage() {
   const handleCreateClick = () => {
     setCreateDialogOpen(true);
   };
+
 
   return (
     <div className="space-y-6">
@@ -96,6 +125,8 @@ export default function ProjectsPage() {
             users={users}
             isLoading={isLoading}
             onCreateClick={handleCreateClick}
+            onProjectUpdated={handleProjectUpdated}
+            onProjectDeleted={handleProjectDeleted}
           />
         )
       )}

@@ -7,17 +7,17 @@ export const projectService = {
     try {
       const response = await api.get('/projects');
       console.log("Projects response:", response.data);
-      
+
       // If response.data is an object with projects array inside
       if (response.data && response.data.projects && Array.isArray(response.data.projects)) {
         return response.data.projects;
       }
-      
+
       // If response.data is directly the array
       if (Array.isArray(response.data)) {
         return response.data;
       }
-      
+
       // Fallback to empty array if no valid data
       console.warn("Projects response format unexpected:", response.data);
       return [];
@@ -26,7 +26,7 @@ export const projectService = {
       return []; // Return empty array on error
     }
   },
-  
+
   getProjectById: async (id: string): Promise<Project | null> => {
     try {
       const response = await api.get(`/projects/${id}`);
@@ -67,13 +67,28 @@ export const projectService = {
     }
   },
 
-  addMemberToProject: async (projectId: string, userId: string): Promise<boolean> => {
+  addMemberToProject: async (
+    projectId: string,
+    email: string
+  ): Promise<Project> => {
+    const res = await api.post(`/projects/${projectId}/members`, { email });
+    return res.data;
+  },
+  removeMemberFromProject: async (
+    projectId: string,
+    userId: string
+  ): Promise<Project> => {
     try {
-      await api.post(`/projects/${projectId}/members`, { userId });
-      return true;
+      const response = await api.delete(
+        `/projects/${projectId}/members/${userId}`
+      );
+      return response.data;
     } catch (error) {
-      console.error(`Error adding member to project ${projectId}:`, error);
+      console.error(
+        `Error removing member ${userId} from project ${projectId}:`,
+        error
+      );
       throw error;
     }
-  }
+  },
 };

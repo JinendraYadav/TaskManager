@@ -35,8 +35,8 @@ export type Project = {
   description: string;
   color: string;
   createdAt: string;
-  ownerId: string;
-  members: string[];
+  ownerId: string | User;
+  members: (string | User)[];
 };
 
 export type Team = {
